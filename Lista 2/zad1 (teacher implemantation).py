@@ -1,14 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+from zad2 import OX,CX,PBX,OBX,PPX,LCSX,LOX,NR_K,NR
+from zad3 import iterated_local_search_mutation
 
 
-# dict to save te results of the algos
-results=np.load('results.npy')
-w=4
+
 # Input data
 
-'''
+
 # BERLIN52
 
 n = 52
@@ -22,7 +22,7 @@ for i in range(n):
     for j in range(n):
         A[i, j] = np.sqrt(((coords[i, :] - coords[j, :])**2).sum())
 print('Distance matrix:\n', A)
-'''
+
 '''
 #kroA150
 
@@ -323,6 +323,19 @@ def transpose_mutation(p):
     p[i] = p[i] - p[j]
     return p
 
+def return_k_iter(i):
+    if i>=240:
+        return 4
+    if i>=230:
+        return 3
+    if i>=200:
+        return 2
+    if i>=100:
+        return 1
+    return None
+    
+    
+
 
 population_size = 500
 chromosome_length = n
@@ -364,6 +377,7 @@ for t in range(number_of_iterations):
     for i in range(int(number_of_offspring/2)):
         if np.random.random() < crossover_probability:
             children_population[2*i, :], children_population[2*i+1, :] = PMX(current_population[parent_indices[2*i], :].copy(), current_population[parent_indices[2*i+1], :].copy())
+            #children_population[2*i, :], children_population[2*i+1, :] = PPX(current_population[parent_indices[2*i], :].copy(), current_population[parent_indices[2*i+1], :].copy())
         else:
             children_population[2*i, :], children_population[2*i+1, :] = current_population[parent_indices[2*i], :].copy(), current_population[parent_indices[2*i+1]].copy()
     if np.mod(number_of_offspring, 2) == 1:
@@ -371,13 +385,14 @@ for t in range(number_of_iterations):
 
     # mutating the children population
     for i in range(number_of_offspring):
-        if np.random.random() < mutation_probability:
+        if np.random.random() < mutation_probability and t>100:
             # OG mutacja
-            children_population[i, :] = reverse_sequence_mutation(children_population[i, :])
-
+            #children_population[i, :] = reverse_sequence_mutation(children_population[i, :])
+            children_population[i, :] = iterated_local_search_mutation(tsp_objective_function,children_population[i, :],return_k_iter(t))
             # trans mutacja
             #children_population[i, :] = transpose_mutation(children_population[i, :])
-
+        if np.random.random() < mutation_probability and t<=100:
+            children_population[i, :] = reverse_sequence_mutation(children_population[i, :])
     # evaluating the objective function on the children population
     children_objective_values = np.zeros(number_of_offspring)
     for i in range(number_of_offspring):
@@ -416,3 +431,11 @@ plt.show()
 #np.save('kroA200-SGA-cost-of-iter', costs)
 #np.save('bays29-SGA-cost-of-iter', costs)
 #np.save('bayg29-SGA-cost-of-iter', costs)
+#np.save('OX-Berlin52',costs)
+#np.save('CX-Berlin52',costs)
+#np.save('PBX-Berlin52',costs)
+#np.save('PPX-Berlin52',costs)
+#np.save('NR-Berlin52',costs)
+#np.save('NR-K-Berlin52',costs)
+#np.save('K-iterative-search-Berlin52',costs)
+np.save('moving_K-iterative-search-Berlin52',costs)

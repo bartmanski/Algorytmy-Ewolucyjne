@@ -1,4 +1,8 @@
 import numpy as np
+
+from zad2 import OX,CX,PBX,OBX,PPX,LCSX,LOX,NR_K,NR
+from zad3 import iterated_local_search_mutation,generate_neighbors
+
 def PMX(ind1, ind2):
     # Długość genotypu
     genome_length = len(ind1)
@@ -44,4 +48,8 @@ def transpose_mutation(p):
 
 a=np.arange(10)
 b=np.array([0,5,4,3,2,1,6,7,8,9])
-print(transpose_mutation(a))
+
+
+
+
+
