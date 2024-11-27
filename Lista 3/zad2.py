@@ -1,11 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# a)
-
-# ES( mi + lambda)
-
-
 def ES_both_gens(mi,lam , size_of_one_guy , goal_fun , bounds = (-np.inf,np.inf) , if_recombine = False , recombine_fun = None , iterations=1000 , both=True ):
     # mi - jak dużo osbników w generacji początkowej / rodzicach
     # lam - jak dużo dzieci powstaje
@@ -95,123 +90,91 @@ def ES_both_gens(mi,lam , size_of_one_guy , goal_fun , bounds = (-np.inf,np.inf)
 
     return parent_population,mins,means
 
-        
+n=13
+
+def g1_problem_func(x):
+    sum1=0
+    for i in range(4):
+        sum1+=5*(x[i] - x[i] * x[i] )
+    sum2 = 0
+    for i in range(4,13):
+        sum2+=x[i]
     
+    return sum1-sum2
 
-def goal_fun(guy):
-    return np.sum(guy, axis=1)
+def g1_vaiolation(x):
+    if(2*x[0] + 2*x[1] + x[9] + x[10] <= 10):
+        return 5
+    return 0
+    
+def g2_vailoation(x):
+    if(2*x[0] + 2*x[2] + x[9] + x[11] <= 10):
+        return 5
+    return 0
 
-def griewank_function(x):
+def g3_vailoation(x):
+    if(2*x[1] + 2*x[2] + x[10] + x[11] <= 10):
+        return 5
+    return 0
 
-    n = len(x)
-    sum_term = np.sum(x**2) / 4000
-    prod_term = np.prod(np.cos(x / np.sqrt(np.arange(1, n + 1))))
-    return 1 + sum_term - prod_term
+def g4_vailoation(x):
+    if(-8*x[0] + x[9]<= 0):
+        return 5
+    return 0
 
-def sum_of_squares(x):
-    n=len(x)
-    wieghts=np.arange(1,n+1)
-    return np.sum(wieghts * x ** 2)
+def g5_vailoation(x):
+    if(-8*x[1] + x[10]<= 0):
+        return 5
+    return 0
 
-#moja prosta
-'''
-last_pop,mins,means=ES_both_gens(100,200,5 , goal_fun)
-'''
+def g6_vailoation(x):
+    if(-8*x[2] + x[11]<= 0):
+        return 5
+    return 0
 
-n = 300
-last_pop,mins,means=ES_both_gens(100,200,n, griewank_function)
+def g7_vailoation(x):
+    if(-2*x[3] - x[4] + x[9]<= 0):
+        return 5
+    return 0
 
-'''
-np.save('griewank_fun_mins',mins)
-np.save('griewank_fun_means',means)
-np.save('griewank_fun_last',last_pop)
-'''
+def g8_vailoation(x):
+    if(-2*x[5] - x[6] + x[10]<= 0):
+        return 5
+    return 0
 
-plt.plot(mins,label='mins')
-#plt.plot(means,label='means')
-plt.legend()
-plt.title('griewank')
-plt.show()
+def g9_vailoation(x):
+    if(-2*x[7] - x[8] + x[11]<= 0):
+        return 5
+    return 0
 
+def if12345678913_lower_1 (x):
+    sum=0
+    index = [0,1,2,3,4,5,6,7,8,12]
+    for i in index:
+        if(x[i] <= 1 ):
+            sum+=1
+    return sum
 
-
-n = 300
-last_pop,mins,means=ES_both_gens(100,200,n, sum_of_squares)
-
-'''
-np.save('squares_sum_mins',mins)
-np.save('squares_sum_means',means)
-np.save('squares_sum_last',last_pop)
-'''
-
-plt.plot(mins,label='mins')
-#plt.plot(means,label='means')
-plt.legend()
-plt.title('sums_of_squares')
-plt.show()
-
-
-
-def rastrigin_function(x):
-    n = len(x) 
-    return 10 * n + np.sum(x**2 - 10 * np.cos(2 * np.pi * x))
-
-
-n= 300
-last_pop,mins,means=ES_both_gens(100,200,n, rastrigin_function )
-'''
-np.save('rastrigin_mins',mins)
-np.save('rastrigin_means',means)
-np.save('rastrigin_last',last_pop)
-'''
-plt.plot(mins,label='mins')
-#plt.plot(means,label='means')
-plt.legend()
-plt.title('restrigin')
-plt.show()
+def subjective_fun(x):
+    return g1_vaiolation(x)+g2_vailoation(x)+g3_vailoation(x)+g4_vailoation(x)+g5_vailoation(x) + g6_vailoation(x) + g7_vailoation(x) + g8_vailoation(x) + g9_vailoation(x) +g1_problem_func(x) + if12345678913_lower_1(x)
 
 
-def schwefel_function(x):
-    n = len(x)
-    term = x * np.sin(np.sqrt(np.abs(x)))
-    return 418.9829 * n - np.sum(term)
-
-n=300
-last_pop,mins,means=ES_both_gens(100,200,n, schwefel_function )
-print(schwefel_function(last_pop[0]))
-'''
-np.save('schwefel_mins',mins)
-np.save('schwefel_means',means)
-np.save('schwefel_last',last_pop)
-'''
-plt.plot(mins,label='mins')
-#plt.plot(means,label='means')
-plt.legend()
-plt.title('wafel')
-plt.show()
-
-
-import numpy as np
-
-def michalewicz_function(x, m=10):
-    n = len(x)  
-    indices = np.arange(1, n + 1)
-    term = np.sin(x) * (np.sin(indices * x**2 / np.pi) ** (2 * m))
-    return -np.sum(term)
-
-
-n=300
-last_pop,mins,means=ES_both_gens(100,200,n, michalewicz_function)
-print(michalewicz_function(last_pop[0]))
+last_pop,mins,means = ES_both_gens(100,200,n,subjective_fun , (0,np.inf))
+print(g1_problem_func(last_pop[0]))
+print(last_pop)
 
 '''
-np.save('michalewicz_mins',mins)
-np.save('michalewicz_means',means)
-np.save('michalewicz_last',last_pop)
+np.save('g1_mins',mins)
+np.save('g1_means',means)
+np.save('g1_last',last_pop)
 '''
 
 plt.plot(mins,label='mins')
 plt.plot(means,label='means')
 plt.legend()
-plt.title('michalewicz')
+plt.title('g1')
 plt.show()
+
+
+
+
