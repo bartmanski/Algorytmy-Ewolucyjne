@@ -2,9 +2,54 @@
 import numpy as np
 import scipy
 import scipy.linalg
-
+from scipy.stats import chi2
 import plotly.graph_objs as go
 import plotly.express as px
+
+def draw_ellipse(mean, cov, color, label, alpha=0.95, n_points=100):
+    """Draws a 95% confidence ellipse for the distribution N(mean, cov)."""
+    # Eigen decomposition of the covariance matrix
+    eigen_vals, eigen_vecs = np.linalg.eig(cov)
+    # Scaling factors for the ellipse axes
+    scale = np.sqrt(chi2.ppf(alpha, df=2)) * np.sqrt(eigen_vals)
+    # Generate ellipse points
+    t = np.linspace(0, 2 * np.pi, n_points)
+    ellipse = np.array([scale[0] * np.cos(t), scale[1] * np.sin(t)])  # Shape (2, n_points)
+    print(ellipse.shape)
+    print(ellipse)
+    print(eigen_vecs.shape)
+    # Rotate the ellipse
+    rotated_ellipse = eigen_vecs @ ellipse  # Shape (2, n_points)
+    # Translate the ellipse
+    ellipse = rotated_ellipse.T + mean  # Broadcasting mean (1, 2) to (n_points, 2)
+    return go.Scatter(x=ellipse[:, 0], y=ellipse[:, 1], mode='lines', line=dict(color=color), name=label)
+
+def visualize_generation(x, fitvals, xmean, C, next_xmean, next_C,g):
+    if(g%5!=0):
+        return 0
+    """Visualize the generation with points and ellipses."""
+    # Sort points by fitness
+    sorted_indices = np.argsort(fitvals)
+    selected = x[sorted_indices[:len(x) // 2]]  # Selected individuals
+    rejected = x[sorted_indices[len(x) // 2:]]  # Rejected individuals
+
+    # Scatter plots for points
+    selected_points = go.Scatter(x=selected[:, 0], y=selected[:, 1], mode='markers',
+                                  marker=dict(color='green', size=8), name=f'Selected (g={g})')
+    rejected_points = go.Scatter(x=rejected[:, 0], y=rejected[:, 1], mode='markers',
+                                  marker=dict(color='red', size=8), name=f'Rejected (g={g})')
+    all_points = go.Scatter(x=x[:, 0], y=x[:, 1], mode='markers',
+                            marker=dict(color='blue', size=6), name=f'All Individuals (g={g})')
+
+    # Ellipses
+    ellipse_current = draw_ellipse(xmean, C, 'blue', f'Ellipse (g={g})')
+    ellipse_next = draw_ellipse(next_xmean, next_C, 'orange', f'Ellipse (g={g+1})')
+
+    # Layout and plot
+    layout = go.Layout(title='elipsy', xaxis=dict(title='x1'), yaxis=dict(title='x2'),
+                       showlegend=True)
+    fig = go.Figure(data=[all_points, selected_points, rejected_points, ellipse_current, ellipse_next], layout=layout)
+    fig.show()
 
 def plot_3d_function(f, a = 10, k = 100):
     x = np.linspace(-a, a, k)
@@ -18,7 +63,7 @@ def plot_3d_function(f, a = 10, k = 100):
 #Funkcje celu
 def sphere_function(X):
     return np.sum(X**2, axis=1)
-plot_3d_function(sphere_function)
+#plot_3d_function(sphere_function)
 def ellipsoid_function(X, a=2):
     n = X.shape[-1]
     return np.sum((a**(np.arange(n)/(n-1)))*X**2, axis=1)
@@ -134,11 +179,12 @@ class CMA_ES:
         x = self.xmean + self.sigma * y
         return x
     
-    def update(self, x, fitvals):
+    def update(self, x, fitvals,g):
         """Zaktualizuj wartości uzyskanych parametrów"""
         self.counteval += fitvals.shape[0] # Zwiększamy licznik wykonań
         N = self.xmean.shape[0]
         x_old = self.xmean.copy()
+        C_old = self.C.copy() 
         
         # Posortuj osobniki po wartości funkcji celu
         indices = np.argsort(fitvals)
@@ -163,14 +209,31 @@ class CMA_ES:
         self.pc = (1-self.cc) * self.pc + np.sqrt(self.cc * (2-self.cc)/self.mueff) * y
         
         #Aktualizacja macierzy kowariancji
+
+        # suma ważona macierzy... 
+        # macierz y*y.T i suma warzona po wagach to chyba po protsu y*y.T bo wagi sumują sie do 1
+        # Rank-1 update (oparte na ścieżce ewolucji pc)
+        rank_one_update = self.c1 * np.outer(self.pc, self.pc)
+
+        # Rank-μ update (ważona suma macierzy y*y^T)
+        weighted_sum = np.zeros_like(self.C)
+        for k in range(len(self.weights)):
+            y_k = (x[k] - x_old) / self.sigma  # Wektor y_k dla potomka k
+            weighted_sum += self.weights[k] * np.outer(y_k, y_k)
+
+        rank_mu_update = weighted_sum * self.cmu
+
         # zamiast 1 powinna być suma wag ale wiemy że sumują sie do 1
-        self.C = (1-self.cc - self.cmu * 1) * self.C + self.c1 * (np.outer(self.pc,self.pc.T)) + self.cmu * self.C
+        self.C = (1-self.cc - self.cmu * 1) * self.C + self.c1 * rank_one_update + rank_mu_update
 
         self.C = (self.C + self.C.T)/2.0 # Upewniamy się, że macierz jest symetryczna
         
         # Aktualizacja rozmiaru kroku
         
         self.sigma = self.sigma * np.exp(self.cs * np.linalg.norm(self.ps)/np.sqrt(self.dimension) - 1)
+        if(self.dimension==2):
+            visualize_generation(x,self.fitvals,x_old,C_old,self.xmean,self.C,g)
+        
         
     def terminate(self):
         """Zakończ algorytm"""
@@ -194,7 +257,7 @@ def optimize(func, x0, sigma, maxfevals = 1000, popsize = None, weights = None):
         print(x)
         f_eval = func(x)
         print(f_eval)
-        cma_es.update(x, f_eval)
+        cma_es.update(x, f_eval,g=cntr)
         res.append(cma_es.best)
         if cntr % 100 == 0:
             print(f"Iteration {cntr:5d}: {res[-1][1]}")
@@ -207,12 +270,11 @@ def optimize_and_plot(f, sigma = 1, d = 10, popsize = None):
     fig = px.line(x = np.arange(y.shape[0]) + 1, y = y)
     fig.show()
     
+
 #Ewaluacja CMA-ES
 
-optimize_and_plot(sphere_function, d = 2)
-#optimize_and_plot(sphere_function, sigma = 200)
-#optimize_and_plot(sphere_function)
-#optimize_and_plot(ellipsoid_function)
-#optimize_and_plot(griewank_function)
-#optimize_and_plot(rastrigin_function)
+#optimize_and_plot(sphere_function, d = 2)
+#optimize_and_plot(rastrigin_function, d=2)
+#optimize_and_plot(ellipsoid_function, d=2)
+#optimize_and_plot(cigar_function, d=2)
 
