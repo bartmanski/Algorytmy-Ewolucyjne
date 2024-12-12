@@ -331,6 +331,7 @@ for index,fun in enumerate(list_of_benchmarks):
 #print(results)
 
 results={}
+'''
 for index,fun in enumerate(list_of_benchmarks):
     name=list_of_benchmarks_names[index]
     es_result=[]
@@ -339,3 +340,8 @@ for index,fun in enumerate(list_of_benchmarks):
         es_result.append((ES_both_gens(100,200,dims,fun,True,x0)))
     results[name]=es_result
 np.save('results_ES',results)
+'''
+
+results=np.load('results_ES.npy',allow_pickle=True).item() 
+
+print(results)
