@@ -1,5 +1,7 @@
 import numpy as np
 import pickle
+import copy
+
 class Tree:
     def __init__(self,val,sons):
         self.val=val
@@ -32,7 +34,7 @@ class Tree:
     
     def mutate(self,h,h_max,F,T,curr_h=0):
         if h == 0 or curr_h == h_max or self.sons ==[]:
-            if np.random.random() <= 1 / h_max:
+            if np.random.random() <= 1 / (h_max+1):
                 # Mutate node with a random terminal
                 self.val = np.random.choice(T)
                 self.sons = []
@@ -134,7 +136,7 @@ def genetic_algorithm(F, T, h_max, population_size, generations, data , fitness_
         for i in range(0,(population_size -len(selected_population))):
             parent1 = selected_population[i]
             #parent1.crossover(parent2)
-            offspring.append(parent1)
+            offspring.append(copy.deepcopy(parent1))
 
         wypisz=[str(i) for i in offspring]
         print(wypisz)
@@ -181,6 +183,10 @@ def cosinus(a):
 def str_cosinus(sons):
     a=sons[0]
     return f'cos({a})'
+def msqrt(a):
+    return np.sqrt(a)
+def str_msqr(a):
+    return f'sqrt({a})'
 
 file_path = 'C:\\Users\\Bartosz Kebel\\Desktop\\Algorytmy Ewolucyjne\\Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\easy_set\\true_eq\\feynman-i.12.1.pkl'
 
@@ -205,8 +211,8 @@ def fitness_function(tree, data):
         error += (predicted - true_value) ** 2
     return error
 
-moje_drzewo = genetic_algorithm(F,T,1,10,10,train_data,fitness_function)
-print(moje_drzewo)
+#moje_drzewo = genetic_algorithm(F,T,1,10,10,train_data,fitness_function)
+#print(moje_drzewo)
 
 
 '''
@@ -220,3 +226,113 @@ fun_tree.mutate(0)
 print(fun_tree)
 
 '''
+
+
+file_path = 'C:\\Users\\Bartosz Kebel\\Desktop\\Algorytmy Ewolucyjne\\Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\easy_set_dummy\\true_eq\\feynman-i.12.1.pkl'
+
+with open(file_path, 'rb') as file:
+    data = pickle.load(file)
+
+
+F = np.array([(FunWrapper(odejmowanie,str_odejmowanie),2),(FunWrapper(dodawanie,str_dodwanie),2),
+              (FunWrapper(mnozenie,str_mnozenie),2),
+              (FunWrapper(cosinus,str_cosinus),1)])
+T=np.array(['x0','x1','x2'])
+
+
+# Now you can use the data
+train_data = np.loadtxt('Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\easy_set_dummy\\train\\feynman-i.12.1.txt')
+def fitness_function(tree, data):
+    error = 0
+    for point in data:
+        dict ={'x0':point[0], 'x1':point[1], 'x2':point[2]}
+        predicted = tree.eval(dict)
+        true_value = point[3]  # Assuming each data point has a 'true_value'
+        error += (predicted - true_value) ** 2
+    return error
+
+#moje_drzewo = genetic_algorithm(F,T,2,10,30,train_data,fitness_function)
+#print(moje_drzewo)
+
+
+
+file_path = 'C:\\Users\\Bartosz Kebel\\Desktop\\Algorytmy Ewolucyjne\\Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\easy_set_dummy\\true_eq\\feynman-i.12.4.pkl'
+
+with open(file_path, 'rb') as file:
+    data = pickle.load(file)
+    #print(data)
+
+F = np.array([(FunWrapper(odejmowanie,str_odejmowanie),2),(FunWrapper(dodawanie,str_dodwanie),2),
+              (FunWrapper(mnozenie,str_mnozenie),2),
+              (FunWrapper(cosinus,str_cosinus),1)])
+T=np.array(['x0','x1','x2','x3','x4','pi','a'])
+
+
+# Now you can use the data
+train_data = np.loadtxt('Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\easy_set_dummy\\train\\feynman-i.12.4.txt')
+def fitness_function(tree, data):
+    error = 0
+    for point in data:
+        dict ={'x0':point[0], 'x1':point[1] , 'x2':point[2] , 'x3':point[3], 'x4':point[4] , 'pi': np.pi , 'a':28235825615.541}
+        predicted = tree.eval(dict)
+        true_value = point[5]  # Assuming each data point has a 'true_value'
+        error += (predicted - true_value) ** 2
+    return error
+
+#moje_drzewo = genetic_algorithm(F,T,3,10,30,train_data,fitness_function)
+#print(moje_drzewo)
+
+file_path = 'C:\\Users\\Bartosz Kebel\\Desktop\\Algorytmy Ewolucyjne\\Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\medium_set\\true_eq\\feynman-i.8.14.pkl'
+
+with open(file_path, 'rb') as file:
+    data = pickle.load(file)
+    #print(data)
+
+F = np.array([(FunWrapper(odejmowanie,str_odejmowanie),2),(FunWrapper(dodawanie,str_dodwanie),2),
+              (FunWrapper(mnozenie,str_mnozenie),2),
+              (FunWrapper(cosinus,str_cosinus),1),(FunWrapper(msqrt,str_msqr),1)])
+T=np.array(['x0','x1','x2','x3'])
+
+
+# Now you can use the data
+train_data = np.loadtxt('Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\medium_set\\train\\feynman-i.8.14.txt')
+def fitness_function(tree, data):
+    error = 0
+    for point in data:
+        dict ={'x0':point[0], 'x1':point[1],'x2':point[2],'x3':point[3]}
+        predicted = tree.eval(dict)
+        true_value = point[4]  # Assuming each data point has a 'true_value'
+        error += (predicted - true_value) ** 2
+    return error
+
+#moje_drzewo = genetic_algorithm(F,T,3,10,30,train_data,fitness_function)
+#print(moje_drzewo)
+
+
+file_path = 'C:\\Users\\Bartosz Kebel\\Desktop\\Algorytmy Ewolucyjne\\Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\medium_set\\true_eq\\feynman-i.10.7.pkl'
+
+with open(file_path, 'rb') as file:
+    data = pickle.load(file)
+    #print(data)
+
+F = np.array([(FunWrapper(odejmowanie,str_odejmowanie),2),(FunWrapper(dodawanie,str_dodwanie),2),
+              (FunWrapper(mnozenie,str_mnozenie),2),
+              (FunWrapper(cosinus,str_cosinus),1),(FunWrapper(msqrt,str_msqr),1)])
+T=np.array(['x0','x1','a'])
+
+
+# Now you can use the data
+train_data = np.loadtxt('Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\medium_set\\train\\feynman-i.10.7.txt')
+def fitness_function(tree, data):
+    error = 0
+    for point in data:
+        dict ={'x0':point[0], 'x1':point[1] , 'a':1.11265005605362e-17}
+        predicted = tree.eval(dict)
+        true_value = point[2]  # Assuming each data point has a 'true_value'
+        error += (predicted - true_value) ** 2
+    return error
+
+#oje_drzewo = genetic_algorithm(F,T,4,10,30,train_data,fitness_function)
+#print(moje_drzewo)
+
+
