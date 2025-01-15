@@ -1,0 +1,222 @@
+import numpy as np
+import pickle
+class Tree:
+    def __init__(self,val,sons):
+        self.val=val
+        self.sons=sons
+    
+    def __str__(self):
+        if(isinstance(self.val,FunWrapper)):
+            return self.val.str_fun([str(son) for son in self.sons])
+        else:
+            return str(self.val)
+    
+    def eval(self,dict):
+        if(isinstance(self.val,FunWrapper)):
+            return self.val(*[son.eval(dict) for son in self.sons])
+        else:
+            return dict[self.val]
+    
+    def generate_tree(self, height,F,T):
+        if(height==0 or np.random.random()<0.3):
+            return Tree(np.random.choice(T),[])
+        else:
+            random_index = np.random.randint(0, len(F))
+            fun,arnosc = F[random_index]
+            sons=[]
+            for i in range(arnosc):
+                son=self.generate_tree((height-1),F,T)
+                sons.append(son)
+                
+            return Tree(fun,sons)
+    
+    def mutate(self,h,h_max,F,T,curr_h=0):
+        if h == 0 or curr_h == h_max or self.sons ==[]:
+            if np.random.random() <= 1 / h_max:
+                # Mutate node with a random terminal
+                self.val = np.random.choice(T)
+                self.sons = []
+            else:
+                # Mutate node with a random function and set its sons accordingly
+                random_index = np.random.randint(0, len(F))
+                fun, arity = F[random_index]
+                self.val = fun
+                if int(arity) < len(self.sons):
+                    # Keep only as many sons as the arity requires
+                    self.sons = [self.sons[i] for i in range(arity)]
+                elif arity > len(self.sons):
+                    # Add new sons to match the arity
+                    for i in range(arity - len(self.sons)):
+                        self.sons.append(self.generate_tree(h_max - curr_h, F, T))
+        else:
+            random_index = np.random.randint(0, len(self.sons))
+            self.sons[random_index] = self.sons[random_index].mutate(h - 1, h_max, F, T, curr_h + 1)
+        return self
+    
+    def crossover(self, other, F, T):
+        if(self.sons!=[] and other.sons!=[]):
+            random_index_1 = np.random.randint(0, len(self.sons))
+            random_index_2 = np.random.randint(0, len(other.sons))
+        
+            # Swap the subtrees
+            self.sons[random_index_1], other.sons[random_index_2] = other.sons[random_index_2], self.sons[random_index_1]
+            return self, other
+        else:
+            return self, other
+
+        
+class FunTree:
+    def __init__(self, F, T, h_max):
+        """
+        Inicjalizuje drzewo funkcji.
+
+        Parameters:
+        - F: list, zbiór par (funkcja bazowych , arnosc ) (np. [lambda x, y: x + y, lambda x, y: x * y])
+        - T: list, zbiór terminali (np. zmienne ['x', 'y'] lub stałe [1, 2, 3])
+        - h_max: int, maksymalna wysokość drzewa
+        """
+        self.F = F  # Zbiór funkcji bazowych
+        self.T = T  # Zbiór terminali (zmiennych i stałych)
+        self.h_max = h_max  # Maksymalna wysokość drzewa
+        self.tree = self.generate_tree(h_max,self.F,self.T)  # Losowe drzewo funkcji
+
+    def __str__(self):
+        return str(self.tree)
+
+    def generate_tree(self, height,F,T):
+        if(height==0 or np.random.random()<0.3):
+            return Tree(np.random.choice(T),[])
+        else:
+            random_index = np.random.randint(0, len(F))
+            fun,arnosc = F[random_index]
+            sons=[]
+            for i in range(arnosc):
+                son=self.generate_tree((height-1), F ,T)
+                sons.append(son)
+                
+            return Tree(fun,sons)
+    
+    def eval(self,dict):
+        return self.tree.eval(dict)
+    
+    def mutate(self,h,curr_h=0):
+        self.tree.mutate(h,self.h_max,self.F,self.T)
+    
+    def crossover(self, other_tree):
+        self.tree, other_tree.tree = self.tree.crossover(other_tree.tree, self.F, self.T)
+        
+   
+class FunWrapper:
+    def __init__(self, fun ,str_fun):
+        self.fun = fun
+        self.str_fun = str_fun
+    def __call__(self, *args):
+        # Zwracamy wynik funkcji
+        return self.fun(*args)
+
+def genetic_algorithm(F, T, h_max, population_size, generations, data , fitness_function):
+    population = [FunTree(F, T, h_max) for _ in range(population_size)]
+
+    for generation in range(generations):
+        # Evaluate fitness of the population
+        wypisz=[str(i) for i in population]
+        print(wypisz)
+        population.sort(key=lambda tree: fitness_function(tree, data))  # Sort by fitness (lower is better)
+        
+        wypisz=[str(i) for i in population]
+        print(wypisz)
+        # Select the top trees (elitism)
+        selected_population = population[:population_size // 2].copy()
+        
+
+        # Crossover to create new individuals
+        offspring = []
+        for i in range(0,(population_size -len(selected_population))):
+            parent1 = selected_population[i]
+            #parent1.crossover(parent2)
+            offspring.append(parent1)
+
+        wypisz=[str(i) for i in offspring]
+        print(wypisz)
+
+        # Mutate offspring
+        for tree in offspring:
+            h=np.random.randint(0,h_max)
+            tree.mutate(h)
+
+        wypisz=[str(i) for i in offspring]
+        print(wypisz)
+
+        # Replace the old population with the new one
+        population = selected_population + offspring
+
+        wypisz=[str(i) for i in selected_population]
+        print(wypisz)
+
+    return population[0]  # Return the best tree
+
+
+def odejmowanie(a,b):
+    return a-b
+def str_odejmowanie(sons):
+    a,b=sons
+    return f"({a} - {b})"
+def dodawanie(a,b):
+    return a+b
+def str_dodwanie(sons):
+    a,b=sons
+    return f"({a} + {b})"
+def mnozenie(a,b):
+    return a*b
+def str_mnozenie(sons):
+    a,b=sons
+    return f"({a} * {b})"
+def dzielenie(a,b):
+    return a/b
+def str_dzielenie(sons):
+    a,b=sons
+    return f"({a} : {b})"
+def cosinus(a):
+    return np.cos(a)
+def str_cosinus(sons):
+    a=sons[0]
+    return f'cos({a})'
+
+file_path = 'C:\\Users\\Bartosz Kebel\\Desktop\\Algorytmy Ewolucyjne\\Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\easy_set\\true_eq\\feynman-i.12.1.pkl'
+
+with open(file_path, 'rb') as file:
+    data = pickle.load(file)
+
+# Now you can use the data
+train_data = np.loadtxt('Lista 5\\srsd-benchmark-main\\resource\\datasets\\srsd\\easy_set\\train\\feynman-i.12.1.txt')
+
+F = np.array([(FunWrapper(odejmowanie,str_odejmowanie),2),(FunWrapper(dodawanie,str_dodwanie),2),
+              (FunWrapper(mnozenie,str_mnozenie),2),
+              (FunWrapper(cosinus,str_cosinus),1)])
+T=np.array(['x0','x1'])
+
+# takie MLE
+def fitness_function(tree, data):
+    error = 0
+    for point in data:
+        dict ={'x0':point[0], 'x1':point[1]}
+        predicted = tree.eval(dict)
+        true_value = point[2]  # Assuming each data point has a 'true_value'
+        error += (predicted - true_value) ** 2
+    return error
+
+moje_drzewo = genetic_algorithm(F,T,1,10,10,train_data,fitness_function)
+print(moje_drzewo)
+
+
+'''
+#testy czy mutacja działała poprawnie (tak)
+fun_tree = FunTree(F,T,2)
+
+print(fun_tree)
+fun_tree.mutate(2)
+print(fun_tree)
+fun_tree.mutate(0)
+print(fun_tree)
+
+'''
